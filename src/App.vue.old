@@ -1,0 +1,1053 @@
+<template>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <div id="app">
+    <header class="header">
+      <h2>Multilayer Music Regional Feature Visualization 
+      </h2>
+    </header>
+    <div class="main-content">
+      <aside class="sidebar">
+        <div class="control-section">
+          <h3>Control Panel</h3>
+          <div class="macro-layer">
+          <!-- 宏观层总开关 -->
+            <div class="control-item">
+              <img class="eye-icon" :src="macroLayerVisible ? '/materials/icons/eye-open.png' : '/materials/icons/eye-close.png'"  @click="toggleMacroLayer" :class="{'active': macroLayerVisible}" alt="宏观层眼睛" />
+              <div class="divider-vertical"></div>
+              <span>Macroscopic Layer</span>
+              <img 
+                :src="macroDropdownVisible ? '/materials/icons/expand.png' : '/materials/icons/collapse.png'" 
+                @click="toggleMacroDropdown" 
+                alt="展开或折叠图标"
+                class="dropdown-icon"
+              />
+            </div>
+            <div class="divider-horizontal"></div>
+
+            <!-- 宏观层下级项目 -->
+            <div v-if="macroDropdownVisible" class="sub-controls">
+              <!-- 相邻结构关系控制 -->
+              <div class="control-item">
+                <img class="eye-icon" :src="neighborVisible ? '/materials/icons/eye-open.png' : '/materials/icons/eye-close.png'" @click="toggleNeighbor" :class="{'active': neighborVisible}" alt="相邻结构眼睛" />
+                <div class="divider-vertical"></div>
+                <span style="font-size: 14px;">Adjacent Structural Relationships</span>
+              </div>
+              <div class="divider-horizontal"></div>
+
+              <!-- 不相邻结构关系控制 -->
+              <div class="control-item">
+                <img class="eye-icon" :src="notNeighborVisible ? '/materials/icons/eye-open.png' : '/materials/icons/eye-close.png'" @click="toggleNotNeighbor" :class="{'active': notNeighborVisible}" alt="不相邻结构眼睛" />
+                <div class="divider-vertical"></div>
+                <span style="font-size: 14px;">Non-Adjacent Structural Relationships</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="macro-layer">
+          <!-- 微观层总开关 -->
+            <div class="control-item">
+              <img class="eye-icon" :src="microLayerVisible ? '/materials/icons/eye-open.png' : '/materials/icons/eye-close.png'" @click="toggleMicroLayer" :class="{'active': microLayerVisible}" alt="微观层眼睛" />
+              <div class="divider-vertical"></div>
+              <span>Microscopic Layer</span>
+              <img 
+                :src="microDropdownVisible ? '/materials/icons/expand.png' : '/materials/icons/collapse.png'" 
+                @click="toggleMicroDropdown" 
+                alt="展开或折叠图标"
+                class="dropdown-icon"
+              />
+            </div>
+            <div class="divider-horizontal"></div>
+
+            <!-- 微观层下级项目 -->
+            <div v-if="microDropdownVisible" class="sub-controls">
+              <!-- 骨干音音程控制 -->
+              <div class="control-item">
+                <img class="eye-icon" :src="intervalVisible ? '/materials/icons/eye-open.png' : '/materials/icons/eye-close.png'" @click="toggleInterval" :class="{'active': intervalVisible}" alt="骨干音音程眼睛" />
+                <div class="divider-vertical"></div>
+                <span style="font-size: 14px;">Characteristic Pitch Intervals</span>
+              </div>
+              <div class="divider-horizontal"></div>
+
+              <!-- 单音与腔音控制 -->
+              <div class="control-item">
+                <img class="eye-icon" :src="monophonicVisible ? '/materials/icons/eye-open.png' : '/materials/icons/eye-close.png'" @click="toggleMonophonic" :class="{'active': monophonicVisible}" alt="单音与腔音眼睛" />
+                <div class="divider-vertical"></div>
+                <span style="font-size: 14px;">Single Notes' Expression</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="description-section">
+          <h3>Description Panel</h3>
+          <div class="explanation">
+            <p v-if="selectedExplanation">{{ selectedExplanation }}</p>
+          </div>
+        </div>
+      </aside>
+      <section class="interactive-area">
+        <div class="controls">
+          <button @click="zoomIn">zoomIn</button>
+          <button @click="zoomOut">zoomOut</button>
+        </div>
+        <div class="scroll-container">
+          <div
+            class="content"
+            ref="content"
+            :style="{           
+              transform: `scale(${scale})` }"
+          >
+          <div class="content2">
+            <img v-if="neighborVisible" src="/materials/neighbor.png" class="background" style="transform: translate(-150%, -55%);   height: 1000px;" alt="背景线条" />
+            <img v-if="notNeighborVisible" src="/materials/not-neighbor.png" style="transform: translate(40%, -40%); height: 600px;" class="background" alt="背景线条" />
+            <div v-if="neighborVisible" class="connections left-connections" >
+              <img 
+                src="/materials/connections/3.png"  
+                style="transform: translate(0%, -80%);" 
+                :class="{ highlighted: highlightedImages.includes(7) }" 
+                class="connection" 
+                :alt="`图像 ${i}`" 
+                @click="showExplanation(1,3)"
+              />
+              <div class="list">
+                <div class="top-list" style="margin-bottom: 133px;">
+                  <img 
+                    v-for="image in images.slice(0, 3)" 
+                    :key="image.id" 
+                    :src="`/materials/connections/${image.type}.png`" 
+                    :class="{ highlighted: highlightedImages.includes(image.id) }" 
+                    style="margin-bottom: 42px;" 
+                    class="connection" 
+                    :alt="`图像 ${image.type}`" 
+                    @click="showExplanation(1, image.type)" 
+                  />
+                </div>
+                <div class="bottom-list">
+                  <img 
+                    v-for="image in images.slice(3, 6)" 
+                    :key="image.id" 
+                    :src="`/materials/connections/${image.type}.png`" 
+                    :class="{ highlighted: highlightedImages.includes(image.id) }" 
+                    style="margin-bottom: 42px;" 
+                    class="connection" 
+                    :alt="`图像 ${image.type}`" 
+                    @click="showExplanation(1, image.type)" 
+                  />
+                </div>
+              </div>
+            </div>
+            <div v-if="!neighborVisible" class="connections left-connections" >
+              <img 
+                src="/materials/connections/white.png"  
+                style="transform: translate(0%, -80%);" 
+                :class="{ highlighted: highlightedImages.includes(7) }" 
+                class="connection" 
+                :alt="`图像 ${i}`" 
+                @click="showExplanation(1,3)"
+              />
+              <div class="list">
+                <div class="top-list" style="margin-bottom: 133px;">
+                  <img 
+                    v-for="image in images.slice(0, 3)" 
+                    :key="image.id" 
+                    :src="`/materials/connections/white.png`" 
+                    :class="{ highlighted: highlightedImages.includes(image.id) }" 
+                    style="margin-bottom: 42px;" 
+                    class="connection" 
+                    :alt="`图像 ${image.type}`" 
+                    @click="showExplanation(1, image.type)" 
+                  />
+                </div>
+                <div class="bottom-list">
+                  <img 
+                    v-for="image in images.slice(3, 6)" 
+                    :key="image.id" 
+                    :src="`/materials/connections/white.png`" 
+                    :class="{ highlighted: highlightedImages.includes(image.id) }" 
+                    style="margin-bottom: 42px;" 
+                    class="connection" 
+                    :alt="`图像 ${image.type}`" 
+                    @click="showExplanation(1, image.type)" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="melodies">
+              <div class="cursor"  :style="{ left: `${(((currentTime%3) / 3) * (Math.ceil(currentTime/3)==3 ? 65 : 95))%100+9}%`,top: `${(Math.floor(currentTime/3)) * (currentTime > 12 ? 90 : 88)+110 + (currentTime > 12 ? 43 : 0)}px` }"></div>
+              <div v-if="monophonicVisible" class="notes">
+                <div class="half-notes">
+                  <div v-for="(line, lineIndex) in noteLines.slice(0, 4)" :key="lineIndex" class="note-line">
+                    <!-- 遍历行内的每一个音符 -->
+                    <img 
+                      v-for="(note, noteIndex) in line" 
+                      :key="noteIndex" 
+                      :src="`/materials/notes/${note}.png`" 
+                      class="note" 
+                      :style="{ 
+                        transform: `translate(${notePositions[lineIndex][noteIndex][0]}px, ${notePositions[lineIndex][noteIndex][1]}px)` 
+                      }" 
+                      :alt="`音符 ${note}`" 
+                      @click="showExplanation(2,note)"
+                    />
+                  </div>
+                </div>
+                <div class="half-notes">
+                  <div v-for="(line, lineIndex) in noteLines.slice(4)" :key="lineIndex + 4" class="note-line">
+                    <img 
+                      v-for="(note, noteIndex) in line" 
+                      :key="noteIndex" 
+                      :src="`/materials/notes/${note}.png`" 
+                      class="note" 
+                      :style="{ 
+                        transform: `translate(${notePositions[lineIndex+4][noteIndex][0]}px, ${notePositions[lineIndex+4][noteIndex][1]}px)` 
+                      }" 
+                      :alt="`音符 ${note}`" 
+                      @click="showExplanation(2,note)"
+                    />
+                  </div>
+                </div> 
+              </div>
+              <div v-if="intervalVisible" class="intervals">
+                <div class="half-intervals"> 
+                  <div v-for="(line, lineIndex) in intervalLines.slice(0, 4)" :key="lineIndex" class="interval-line">
+                    <!-- 遍历行内的每一个音程 -->
+                    <img 
+                      v-for="(interval, intervalIndex) in line" 
+                      :key="intervalIndex" 
+                      :src="`/materials/intervals/${interval}.png`" 
+                      class="interval" 
+                      :style="{ 
+                        transform: `translate(${intervalPositions[lineIndex][intervalIndex][0]}px, ${intervalPositions[lineIndex][intervalIndex][1]}px)` 
+                      }" 
+                      :alt="`音符 ${interval}`" 
+                      @click="showExplanation(3,interval)"
+                    />
+                  </div>
+                </div>
+                <div class="half-intervals">
+                  <div v-for="(line, lineIndex) in intervalLines.slice(4)" :key="lineIndex + 4" class="interval-line">
+                    <img 
+                      v-for="(interval, intervalIndex) in line" 
+                      :key="intervalIndex" 
+                      :src="`/materials/intervals/${interval}.png`" 
+                      class="interval" 
+                      :style="{ 
+                        transform: `translate(${intervalPositions[lineIndex+4][intervalIndex][0]}px, ${intervalPositions[lineIndex+4][intervalIndex][1]}px)` 
+                      }" 
+                      :alt="`音符 ${interval}`" 
+                      @click="showExplanation(3,interval)"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="half-melodies" style="margin-bottom: 50px;">
+                <img 
+                  v-for="i in [1, 2, 3, 4]" 
+                  :key="i" 
+                  :src="`/materials/melody/${i}.png`" 
+                  style="margin-bottom: 18px;" 
+                  class="melody" 
+                  :alt="`图像 ${i}`" 
+                  @dblclick="playMelody(i)" 
+                />
+              </div>
+
+              <div class="half-melodies">
+                <img 
+                  v-for="i in [5, 6, 7, 8]" 
+                  :key="i" 
+                  :src="`/materials/melody/${i}.png`" 
+                  style="margin-bottom: 20px;" 
+                  class="melody" 
+                  :alt="`图像 ${i}`" 
+                  @dblclick="playMelody(i)" 
+                />
+              </div>
+            </div>
+
+            <div v-if="notNeighborVisible" class="connections right-connections">
+              <img 
+                v-for="image in images.slice(7, 10)" 
+                :key="image.id" 
+                :src="`/materials/connections/${image.type}.png`"  
+                :class="{ highlighted: highlightedImages.includes(image.id) }" 
+                :style="{ transform: `translate(${(image.id-8) * 70}px, 0)` }" 
+                class="connection" 
+                :alt="`图像 ${image.type}`" 
+                @click="showExplanation(1, image.type)" 
+              />
+            </div>
+            <div v-if="!notNeighborVisible" class="connections left-connections" ></div>
+          </div>
+          </div>
+        </div>
+        <div class="music-player">
+           <div class="music-info">
+              <img src="materials/music/cover.png" alt="歌曲封面" class="cover" />
+              <div class="music-texts">
+                <p class="title">Horse Racing</p>
+                <p style="font-size: 14px;">Anonymous Performer</p>
+              </div>
+           </div>
+         
+           <div class="player-controls">
+              <img
+                :src="isPlaying ? '/materials/music/play.png' : '/materials/music/pause.png'"
+                alt="播放/暂停"
+                class="play-pause"
+                @click="togglePlay"
+              />
+              <input
+                type="range"
+                class="progress-bar"
+                min="0"
+                :max="audioDuration"
+                v-model="currentTime"
+                @input="seek"
+              />
+              <span class="time">{{ formatTime(currentTime) }} / {{ formatTime(audioDuration) }}</span>
+           </div>  
+        </div>
+      </section>
+    </div>
+  </div>
+</template>
+
+<script>
+import '@fortawesome/fontawesome-free/css/all.css';
+// import HelloWorld from './components/HelloWorld.vue'
+
+
+// export default {
+//   name: 'App',
+//   components: {
+//     HelloWorld
+//   }
+// }
+export default {
+  name: "App",
+  data() {
+    return {
+      scale: 1,            // 缩放比例
+      translateX: 0,       // 水平平移量
+      translateY: 0,       // 垂直平移量
+      isDragging: false,   // 是否正在拖拽
+      startX: 0,           // 拖拽起始X坐标
+      startY: 0,           // 拖拽起始Y坐标
+      macroLayerVisible: true, // 控制宏观层的可见性
+      macroDropdownVisible: true, // 控制宏观层下拉的显示与否
+      microLayerVisible: true, // 控制宏观层的可见性
+      microDropdownVisible: true, // 控制宏观层下拉的显示与否
+      neighborVisible: true, // 控制相邻结构关系的可见性
+      notNeighborVisible: true, // 控制不相邻结构关系的可见性
+      intervalVisible:true,
+      monophonicVisible:true,
+      selectedId: 1,
+      selectedType: 0,
+      audio: null,           // Audio 对象
+      melody: null,
+      isPlaying: false,      // 播放状态
+      currentTime: 0,        // 当前播放时间
+      audioDuration: 0,       // 音频总时长
+      melodies: {}, // 存储音频对象
+      images: [
+        { id: 1, type: 1 },
+        { id: 2, type: 4 },
+        { id: 3, type: 2 },
+        { id: 4, type: 1 },
+        { id: 5, type: 4 },
+        { id: 6, type: 2 },
+        { id: 7, type: 3 },
+        { id: 8, type: 3 },
+        { id: 9, type: 3 },
+        { id: 10, type: 3 },
+      ],
+      highlightedImages: [],
+      highlightMap: [
+        { start: 0, end: 3, ids: [1, 7, 8] },
+        { start: 3, end: 6, ids: [1,2,7,9] },
+        { start: 6, end: 9, ids: [2,3,7,10] },
+        { start: 9, end: 12, ids: [3,7] },
+        { start: 12, end: 15, ids: [4,7,8] },
+        { start: 15, end: 18, ids: [4,5,7,9] },
+        { start: 18, end: 21, ids: [5,6,7,10] },
+        { start: 21, end: 24, ids: [6,7] }
+      ],
+      explanations: [
+        {
+            1: "Click on a visualization element to get an explanation."
+        },
+        { 
+            1: "The relationship between these two structures is 'Same Opening,' meaning they share the same initial melody but gradually develop differently.",
+            2: "The relationship between these two structures is 'Same Closing,' meaning the second structure starts by continuing the final note of the previous structure, allowing the music to develop naturally with continuity.",
+            3: "The relationship between these two structures is 'Variation,' meaning the second structure retains the melodic theme of the first structure while introducing some formal changes.",
+            4: "The relationship between these two structures is 'Elaboration,' meaning the second structure progressively develops and enriches the first structure, creating a sense of layering."
+        },
+        { 
+            1: "This is a fundamental tone that influences the melodic contour.",
+            2: "This is a passing tone that enriches the melody.",
+            3: "This is a fundamental tone that has undergone pitch modification through resonance processing. The pitch variation range is small, and the duration is relatively long.",
+            4: "This is a fundamental tone that has undergone pitch modification through resonance processing. The pitch variation range is large, and the duration is relatively long.",
+            5: "This is a fundamental tone that has undergone pitch modification through resonance processing. The pitch variation range is small, and the duration is relatively short.",
+            6: "This is a fundamental tone that has undergone pitch modification through resonance processing. The pitch variation range is large, and the duration is relatively short.",
+            7: "This is a passing tone that has undergone pitch modification through resonance processing. The pitch variation range is small, and the duration is relatively short.",
+            8: "This is a passing tone that has undergone pitch modification through resonance processing. The pitch variation range is large, and the duration is relatively short."
+        },
+        {
+            1: "This is a minor third ascending interval, spanning 3 semitones.",
+            2: "This is a minor third descending interval, spanning 3 semitones.",
+            3: "This is a major third descending interval, spanning 4 semitones.",
+            4: "This is a perfect fourth ascending interval, spanning 7 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            5: "This is a perfect fourth descending interval, spanning 7 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            6: "This is a perfect fifth ascending interval, spanning 7 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            7: "This is a perfect fifth descending interval, spanning 7 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            8: "This is a minor sixth ascending interval, spanning 8 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            9: "This is a major sixth ascending interval, spanning 9 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            10: "This is a perfect octave descending interval, spanning 12 semitones, and is a characteristic interval of the Mongolian grasslands.",
+            11: "This is a perfect octave ascending interval, spanning 12 semitones, and is a characteristic interval of the Mongolian grasslands."
+        }
+      ],
+      noteLines: [
+        [1, 2, 1, 3, 1, 2, 2, 6, 3],
+        [1, 2, 1, 1, 2, 2, 1, 2, 1, 7, 1],
+        [1, 2, 1, 3, 1, 2, 2, 1, 8, 1],
+        [1, 7, 1, 2, 2, 2, 1, 1, 2, 1, 8, 1],
+        [1, 2, 2, 2, 1, 1, 2, 2, 2, 1, 1, 2, 2, 2, 1, 2, 6, 2, 1],
+        [1, 2, 2, 2, 1, 1, 2, 2, 2, 1, 1, 2, 2, 1, 7, 1, 2, 1, 2, 1],
+        [1, 2, 2, 2, 1, 1, 2, 2, 2, 1, 1, 2, 2, 1, 7, 1, 2, 1, 2, 1],
+        [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1]
+      ],
+      notePositions: [
+        [
+          [0, 2], [30, -10], [50, -18], [52, -5],
+          [105, 5], [116, -2], [125,-8], [140, -18],
+          [167, -8]
+        ],
+        [
+          [0, 44], [30, 30], [50, 22], [52, 35],
+          [92, 35], [102, 42], [113, 45], [124, 42],
+          [130, 30], [138, 32], [148, 42]
+        ],
+        [
+          [5, 72], [25, 65], [45, 60], [42, 85],
+          [85, 92], [92, 85], [100, 78], [110, 68],
+          [120, 70], [130, 80]
+        ],
+        [
+          [0, 120], [10, 125], [18, 130], [28, 128],
+          [32, 123], [40, 115], [50, 110], [75, 130],
+          [95, 125], [105, 120], [120, 125],[140,135]
+        ],
+        [
+          [3, -4], [10, -10], [15, -10], [22, -20],
+          [26, -25], [40, -12], [45, -10], [47, -10],
+          [49, -10], [60, -5], [67, -8], [80, -8],
+          [83, -15], [86, -28], [98, -30],
+          [103, -25], [108, -15], [125, -15], [140, 12],
+        ],
+        [
+          [3, 36], [10, 30], [15, 30], [22, 20],
+          [26, 15], [35, 28], [45, 30], [47, 30],
+          [49, 30], [60, 35], [72, 40], [80, 42],
+          [83, 35], [86, 22], [98, 27], [108, 38],
+          [116, 40], [121, 30], [123, 40], [130, 50],
+        ],
+        [
+          [3, 65], [10, 65], [15, 65], [22, 60],
+          [26, 55], [38, 85], [45, 85], [47, 85],
+          [49, 85], [60, 95], [67, 85], [80, 85],
+          [83, 80], [86, 65], [98, 67], [108, 78],
+          [116, 75], [121, 70], [123, 75], [130, 80],
+        ],
+        [
+          [3, 125], [4, 135], [6, 128], [8, 122],
+          [10, 118], [12, 125], [14, 120], [16, 110],
+          [18, 100], [19, 108], [17, 103], [15, 95],
+          [16, 110], [17, 105], [18, 110], [19, 118],
+          [20, 123], [21, 118], [22, 125], [23, 130],
+          [24, 125], [25, 130], [26, 140], [22, 126],
+          [27, 135], [60, 105]
+        ],
+      ],
+      intervalLines:[
+        [8, 5, 2, 8, 2],
+        [8, 5, 5, 6, 5],
+        [4,10, 2,11, 5],
+        [3, 9,10, 4, 7],
+        [8, 5, 2, 2, 6, 5, 10],
+        [8, 5, 2, 2, 6, 5, 1, 7],
+        [4,10, 2, 4, 6, 5, 1, 5],
+        [10,11,11]
+      ],
+      intervalPositions:[
+        [
+          [10, 2], [45, 5], [50, 15], [70, 5], [120, 0]
+        ],
+        [
+          [0, 44], [45, 40], [60, 50], [80, 45], [100, 40]
+        ],
+        [
+          [5, 72], [40, 90], [40, 100], [50, 90], [95, 80],
+        ],
+        [
+          [10, 130], [30, 125], [75, 125], [80, 130], [110, 130],
+        ],
+        [
+          [10, -25], [45, -20], [50, -15], [70, -15], [90, -25], [130, -30], [135, -10]
+        ],
+        [
+          [10, 20], [45, 20], [60, 20], [75, 25], [80, 25], [100, 20], [110, 30], [145, 40]
+        ],
+        [
+          [10, 50], [45, 70], [50, 75], [60, 75], [70, 60], [90, 60], [100, 60], [115, 60]
+        ],
+        [
+          [40, 94], [140, 94], [200, 100]
+        ],
+      ]
+    };
+  },
+  created() {
+    this.preloadMelodies(); // 页面加载时预加载音频
+  },
+  mounted() {
+    // 初始化 Audio 对象
+    this.audio = new Audio('/materials/music/horse.MP3');
+    this.currentTime = 0;
+    this.audio.addEventListener('timeupdate', () => {
+      this.updateHighlight(this.audio.currentTime); // 更新高亮状态
+      this.updateTime(); // 更新进度条
+    });
+    this.audio.addEventListener('loadedmetadata', this.updateDuration);
+  },
+  methods: {
+    preloadMelodies() {
+      for (let i = 0; i < 5; i++) { // 假设有5个音频
+        this.melodies[i] = new Audio(`/materials/music/${i}.MP3`);
+      }
+    },
+    playMelody(index) {
+      // 如果当前音频正在播放，暂停
+      if (this.isPlaying) {
+        this.currentMelody.pause();
+        this.isPlaying = false;
+      }
+
+      // 如果没有加载过该音频，加载并播放
+      if (!this.melodies[index]) {
+        this.melodies[index] = new Audio(`/materials/music/${index}.MP3`);
+      }
+
+      // 播放音频
+      this.currentMelody = this.melodies[index];
+      this.currentMelody.play();
+      this.isPlaying = true;
+    },
+    zoomIn() {
+      this.scale = Math.min(this.scale + 0.1, 2); // 设置最大放大倍数
+    },
+    zoomOut() {
+      this.scale = Math.max(this.scale - 0.1, 1); // 设置最小缩小倍数
+    },
+    startDragging(event) {
+      this.isDragging = true;
+      this.startX = event.clientX - this.translateX;
+      this.startY = event.clientY - this.translateY;
+    },
+    stopDragging() {
+      this.isDragging = false;
+    },
+    drag(event) {
+      if (this.isDragging) {
+        this.translateX = event.clientX - this.startX;
+        this.translateY = event.clientY - this.startY;
+      }
+    },
+    toggleMacroLayer() {
+      // 切换宏观层及其子项的可见性
+      this.macroLayerVisible = !this.macroLayerVisible;
+      this.neighborVisible = this.macroLayerVisible;
+      this.notNeighborVisible = this.macroLayerVisible;
+    },
+    toggleMacroDropdown() {
+      // 切换宏观层下拉显示与否
+      this.macroDropdownVisible = !this.macroDropdownVisible;
+    },
+    toggleMicroLayer() {
+      // 切换宏观层及其子项的可见性
+      this.microLayerVisible = !this.microLayerVisible;
+      this.intervalVisible = this.microLayerVisible;
+      this.monophonicVisible = this.microLayerVisible;
+    },
+    toggleMicroDropdown() {
+      // 切换宏观层下拉显示与否
+      this.microDropdownVisible = !this.microDropdownVisible;
+    },
+    toggleNeighbor() {
+      // 单独切换相邻结构的可见性
+      this.neighborVisible = !this.neighborVisible;
+    },
+    toggleNotNeighbor() {
+      // 单独切换不相邻结构的可见性
+      this.notNeighborVisible = !this.notNeighborVisible;
+    },
+    toggleInterval() {
+      this.intervalVisible = !this.intervalVisible;
+    },
+    toggleMonophonic() {
+      this.monophonicVisible = !this.monophonicVisible;
+    },
+    showExplanation(type,Id) {
+      this.selectedType = type;
+      this.selectedId = Id;
+    },
+    togglePlay(){
+      if (this.isPlaying){
+        this.audio.pause();
+      } else {
+        this.audio.play();
+      }
+      this.isPlaying = !this.isPlaying;
+    },
+    updateTime(){
+      if (this.audioDuration > 0) { // 确保音频元数据已加载
+        this.currentTime = this.audio.currentTime || 0; // 当前时间默认为 0
+        const progressPercentage = (this.audio.currentTime / this.audioDuration * 100) || 0; // 确保结果为有效数字
+        document.documentElement.style.setProperty('--progress', `${progressPercentage}%`);
+      } else {
+        document.documentElement.style.setProperty('--progress', `0%`);
+      }
+    },
+    updateDuration(){
+      this.audioDuration = Math.floor(this.audio.duration);
+    },
+    formatTime(time){
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    },
+    seek(){
+      this.audio.currentTime = this.currentTime;
+    },
+    updateHighlight(currentTime) {
+      const highlight = this.highlightMap.find(h => currentTime >= h.start && currentTime <= h.end);
+      if (highlight) {
+        this.highlightedImages = highlight.ids;
+      } else {
+        this.highlightedImages = [];
+      }
+    }
+  },
+  beforeUnmount() {
+    this.audio.removeEventListener('timeupdate', this.updateTime);
+    this.audio.removeEventListener('loadedmetadata', this.updateDuration);
+    this.audio.pause();
+  },
+  computed:{
+    selectedExplanation(){
+      return this.explanations[this.selectedType][this.selectedId] || "";
+    }
+  }
+};
+</script>
+
+<style>
+html, body, #app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  color: #272724;
+  background-color: #F8F4ED;
+}
+
+.cursor {
+  position: absolute;
+  width: 30px; 
+  height: 70px; 
+  background-color: rgba(255,165,0,0.3);
+  transition: left 0.1s linear; 
+  z-index:5;
+}
+
+.header {
+  margin:2%;
+  text-align: left;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  margin: 2%;
+  gap:1%;
+  height: 80%;
+}
+
+.sidebar {
+  width: 25%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap:10px;
+  padding: 1%;
+  background-color: #fff;
+}
+
+.control-section,
+.description-section{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap:10px;
+  padding:5%;
+  height:50%;
+  width: 90%;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+.interactive-area {
+  width: 70%;
+  height: 100%;
+  padding: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+h1,
+h2,h3{
+  margin: 0;
+}
+
+button {
+  margin-top: 10px;
+}
+
+.controls {
+  position: absolute;
+  right: 5%;
+  z-index: 3;
+}
+
+.scroll-container {
+  width: 100%;
+  height: 100%;
+  border: none;
+  position: relative;
+}
+
+.content {
+  height: 100%;
+  width:100%;
+  top:200px;
+  overflow-x: scroll; /* 水平滚动条 */
+  overflow-y: scroll; /* 垂直滚动条 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  transform-origin: 0 0; 
+}
+
+.content2{
+  position: absolute;
+  top: 0px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  z-index: 1;
+}
+
+.melody{
+  position: relative;
+  z-index:2;
+  height: 70px;
+  width: auto;
+  left:30px;
+  top:110px;
+}
+
+.melodies {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+}
+
+.half-melodies {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+}
+
+.connections{
+  width:400px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  position: relative;
+  left:-160px;
+}
+
+.left-connections{
+  width: 100px;
+  display: flex;
+  flex-direction: row;
+  transform: translate(-110px, 135px);
+  gap:50px;
+}
+
+.right-connections{
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  transform: translate(360px, 80px); 
+  gap:50px;
+}
+
+.list{
+  display: flex;
+  flex-direction: column;
+}
+
+.connection{
+  height: 45px;
+  width: auto;
+}
+
+.macro-layer{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.sub-controls{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+}
+
+.eye-icon{
+  width:20px;
+}
+.control-item{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap:10px;
+  padding-left: 10px;
+}
+
+.divider-vertical {
+  width: 1px;
+  height: 30px;
+  background-color: #ccc; /* 垂直分隔线颜色 */
+  margin: 0 4px;
+}
+
+.divider-horizontal {
+  height: 1px;
+  width: 280px;
+  background-color: #ccc; /* 横向分隔线颜色 */
+  margin: 4px 0;
+}
+
+.dropdown-icon {
+  width: auto;
+  height: 10px;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.explanation{
+  background-color: #FFFCF8;
+  padding:10px;
+  height: 90%;
+  width: 90%;
+  border-radius: 10px;
+  justify-content: center;
+}
+
+.explanation p{
+  text-align: left;
+  padding: 10px;
+}
+
+.notes{ /*音符顶层*/
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  z-index: 4;
+  gap:250px;
+  left:30px;
+  top:140px;
+}
+
+.half-notes{ /*音符第二层，分上下两半部分*/
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  left: 0px;
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.note-line{ /*音符第三层，半部分中的一条旋律*/
+  position: relative;
+  display: flex;
+  flex-direction: row;
+}
+
+.note { /*音符第四层，一个音符*/
+  position: relative;
+  width: auto; /* 根据需要调整音符的宽度 */
+  height: 10px;
+}
+
+.intervals{
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  z-index: 4;
+  gap:250px;
+  left:40px;
+  top:110px;
+}
+
+.interval{
+  height:15px;
+  width:auto;
+}
+
+.half-intervals{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  left: 0px;
+  gap: 30px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.music-player{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  position: relative;
+  bottom:0;
+  width: 95%;
+  padding-top:10px;
+}
+
+.music-player .music-info{
+  display: flex;
+  flex-direction: row;
+  margin-right:15px;
+  gap:5px;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.music-player .music-texts{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 90%;
+}
+
+.music-player .music-texts p{
+  line-height: 1.0;
+  margin:0;
+}
+
+.music-player .music-texts .title{
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.music-player .cover{
+  width:50px;
+  height:50px;
+  border-radius: 5px;
+}
+
+.music-player .player-controls{
+  display: flex;
+  align-items: center;
+  flex:1;
+}
+
+.music-player .player-controls .play-pause{
+  width: 40px;
+  height: 40px;
+  margin-right: 15px;
+  cursor: pointer;
+}
+
+.music-player .player-controls .progress-bar{
+  flex:1;
+  margin:0 15px;
+  appearance: none; 
+  background: linear-gradient(
+    to right,
+    #FFCF8A 0%,
+    #FFCF8A var(--progress, 0%),
+    #FFF0DC var(--progress, 0%),
+    #FFF0DC 100%
+  );
+  /* background: #FFF0DC; */
+  height:5px;
+  border-radius: 20px;
+}
+
+.music-player .player-controls .progress-bar::-webkit-slider-thumb {
+  appearance: none; 
+  width: 15px;
+  height: 15px;
+  background: #FFCF8A; 
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.music-player .time{
+  font-size: 14px;
+  color: #555;
+}
+
+.highlighted {
+  outline: 6px solid #FFCF8A;
+  border-radius: 13px;
+}
+
+
+</style>
